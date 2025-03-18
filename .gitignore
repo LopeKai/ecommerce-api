@@ -1,3 +1,5 @@
 /node_modules
 .vscode
 /lib
+firebase-adminsdk.json
+.env
