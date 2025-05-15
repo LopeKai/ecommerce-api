@@ -3,7 +3,6 @@ import { getFirestore } from "firebase-admin/firestore"
 import { NotFoundError } from "../errors/not-found.error";
 import { User } from "../models/user.model";
 
-
 export class UsersController {
     static async getAll(req: Request, res: Response, next: NextFunction) {
         const snapshot = await getFirestore().collection('users').get();
