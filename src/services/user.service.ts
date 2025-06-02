@@ -1,52 +1,44 @@
-import { getFirestore } from "firebase-admin/firestore";
-import { User } from "../models/user.model";
+
 import { NotFoundError } from "../errors/not-found.error";
+import { User } from "../models/user.model";
+
+import { UserRepository } from "../repositories/user.repository";
 
 export class UserService {
+    private userRepository: UserRepository;
+
+    constructor() {
+        this.userRepository = new UserRepository();
+    }
 
     async getAll(): Promise<User[]> {
-        const snapshot = await getFirestore().collection('users').get();
-        return snapshot.docs.map(doc => {
-            return {
-                id: doc.id,
-                ...doc.data()
-            };
-        }) as User[];
+        return this.userRepository.getAll();
     }
 
-    async getById(userId: string):Promise<User> {
-        const doc = await getFirestore().collection("users").doc(userId).get();
-        if (doc.exists) {
-            const user = {
-                id: doc.id,
-                ...doc.data()
-            } as User;
-            return user;
-        } else {
-            throw new NotFoundError("Usuário não encontrado!")
-        };
+    async getById(userId: string): Promise<User> {
+        const user = await this.userRepository.getById(userId);
+
+        if(!user) throw new NotFoundError("Usuário não encontrado!")
+
+        return user;
     };
 
-    async save(bodyData: User):Promise<any> {
-        const userSalvo = await getFirestore().collection("users").add(bodyData)
-        return userSalvo;
+    async save(user: User): Promise<any> {
+        return this.userRepository.save(user);
     };
 
-    async update(user: User, userId: string):Promise<string> {
-        const docRef = getFirestore().collection("users").doc(userId);
+    async update(user: User, userId: string) {
+        const _user = await this.userRepository.getById(userId);
 
-        if ((await docRef.get()).exists) {
-            await docRef.set({
-                nome: user.nome,
-                email: user.email,
-            });
-            return ("Usuário Editado com sucesso!");
-        } else {
-            throw new NotFoundError("Usuário não encontrado!");
-        }
-    }
+        if(!_user) throw new NotFoundError("Usuário não encontrado!");
 
-    async delete(userId: string):Promise<void> {
-        await getFirestore().collection("users").doc(userId).delete();
+        _user.nome = user.nome;
+        _user.email = user.email;
+
+        this.userRepository.update(_user);
     };
-}
+
+    async delete(userId: string): Promise<void> {
+        return this.userRepository.delete(userId);
+    };
+};
