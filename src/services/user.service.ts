@@ -3,12 +3,15 @@ import { NotFoundError } from "../errors/not-found.error";
 import { User } from "../models/user.model";
 
 import { UserRepository } from "../repositories/user.repository";
+import { AuthService } from "./auth.sevice";
 
 export class UserService {
     private userRepository: UserRepository;
+    private authService: AuthService;
 
     constructor() {
         this.userRepository = new UserRepository();
+        this.authService = new AuthService();
     }
 
     async getAll(): Promise<User[]> {
@@ -17,20 +20,20 @@ export class UserService {
 
     async getById(userId: string): Promise<User> {
         const user = await this.userRepository.getById(userId);
-
-        if(!user) throw new NotFoundError("Usuário não encontrado!")
-
+        if (!user) throw new NotFoundError("Usuário não encontrado!")
         return user;
     };
 
     async save(user: User): Promise<any> {
-        return this.userRepository.save(user);
+        const userAuth = await this.authService.create(user);
+        user.id = userAuth.uid;
+        await this.userRepository.update(user)
     };
 
     async update(user: User, userId: string) {
         const _user = await this.userRepository.getById(userId);
 
-        if(!_user) throw new NotFoundError("Usuário não encontrado!");
+        if (!_user) throw new NotFoundError("Usuário não encontrado!");
 
         _user.nome = user.nome;
         _user.email = user.email;
